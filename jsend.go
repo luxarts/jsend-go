@@ -22,9 +22,10 @@ func NewError(message string, err error, code ...int) *Body {
 	b := Body{
 		Status:  StatusError,
 		Message: &message,
-		Data:    err.Error(),
 	}
-
+	if err != nil {
+		b.Data = err.Error()
+	}
 	if len(code) > 0 {
 		b.Code = &(code[0])
 	}
@@ -53,7 +54,7 @@ func (e *Body) Error() string {
 		}
 		return *e.Message
 	} else if e.Status == StatusFail {
-		return fmt.Sprintf("%v", e.Data)
+		return fmt.Sprintf("%+v", e.Data)
 	} else {
 		return ""
 	}

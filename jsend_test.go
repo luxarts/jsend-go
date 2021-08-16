@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestNewError_WithCode_OK(t *testing.T) {
+func TestNewError_WithCodeAndData_OK(t *testing.T) {
 	// Given
 	msg := "Message"
 	err := errors.New("some error")
@@ -52,9 +52,54 @@ func TestNewError_WithoutCode_OK(t *testing.T) {
 	require.Equal(t, "Message", body.Error())
 	require.Equal(t, `{"status":"error","message":"Message","data":"some error"}`, string(bodyBytes))
 }
+func TestNewError_WithoutData_OK(t *testing.T) {
+	// Given
+	msg := "Message"
+	code := 1234
+
+	// When
+	body := NewError(msg, nil, code)
+
+	bodyBytes, marshallErr := json.Marshal(body)
+	if marshallErr != nil{
+		require.Nil(t, marshallErr)
+	}
+
+	// Then
+	require.Equal(t, "error", body.Status)
+	require.Equal(t, "Message", *body.Message)
+	require.Equal(t, 1234, *body.Code)
+	require.Nil(t, body.Data)
+	require.Equal(t, "Message (1234)", body.Error())
+	require.Equal(t, `{"status":"error","message":"Message","data":null,"code":1234}`, string(bodyBytes))
+}
+func TestNewError_WithoutDataAndCode_OK(t *testing.T) {
+	// Given
+	msg := "Message"
+
+	// When
+	body := NewError(msg, nil)
+
+	bodyBytes, marshallErr := json.Marshal(body)
+	if marshallErr != nil{
+		require.Nil(t, marshallErr)
+	}
+
+	// Then
+	require.Equal(t, "error", body.Status)
+	require.Equal(t, "Message", *body.Message)
+	require.Nil(t, body.Code)
+	require.Nil(t, body.Data)
+	require.Equal(t, "Message", body.Error())
+	require.Equal(t, `{"status":"error","message":"Message","data":null}`, string(bodyBytes))
+}
 func TestNewFail_OK(t *testing.T) {
 	// Given
-	data := "some data"
+	data := struct {
+		Parameter string `json:"parameter"`
+	}{
+		Parameter: "Missing parameter",
+	}
 
 	// When
 	body := NewFail(data)
@@ -65,15 +110,19 @@ func TestNewFail_OK(t *testing.T) {
 
 	// Then
 	require.Equal(t, "fail", body.Status)
-	require.Equal(t, "some data", body.Data)
+	require.Equal(t, data, body.Data)
 	require.Nil(t, body.Message)
 	require.Nil(t, body.Code)
-	require.Equal(t, "some data", body.Error())
-	require.Equal(t, `{"status":"fail","data":"some data"}`, string(bodyBytes))
+	require.Equal(t, "{Parameter:Missing parameter}", body.Error())
+	require.Equal(t, `{"status":"fail","data":{"parameter":"Missing parameter"}}`, string(bodyBytes))
 }
 func TestNewSuccess_WithData_OK(t *testing.T) {
 	// Given
-	data := "some data"
+	data := struct {
+		Parameter string `json:"parameter"`
+	}{
+		Parameter: "value",
+	}
 
 	// When
 	body := NewSuccess(data)
@@ -84,11 +133,11 @@ func TestNewSuccess_WithData_OK(t *testing.T) {
 
 	// Then
 	require.Equal(t, "success", body.Status)
-	require.Equal(t, "some data", body.Data)
+	require.Equal(t, data, body.Data)
 	require.Nil(t, body.Message)
 	require.Nil(t, body.Code)
 	require.Empty(t, body.Error())
-	require.Equal(t, `{"status":"success","data":"some data"}`, string(bodyBytes))
+	require.Equal(t, `{"status":"success","data":{"parameter":"value"}}`, string(bodyBytes))
 }
 func TestNewSuccess_WithoutData_OK(t *testing.T) {
 	// Given

@@ -1,4 +1,4 @@
-module jsend-go
+module github.com/luxarts/jsend-go
 
 go 1.16
 
